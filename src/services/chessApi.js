@@ -38,24 +38,86 @@ export async function getPlayerStats(username) {
 }
 
 // Fetch games from the latest monthly archive
+
 export async function getPlayerGames(username) {
-  const archives = await fetchJSON(
-    `${BASE_URL}/player/${encodeURIComponent(username)}/games/archives`
+  const name = username.trim()
+
+  const archiveData = await fetchJSON(
+    `${BASE_URL}/player/${encodeURIComponent(name)}/games/archives`
   )
 
-  if (!archives.archives?.length) {
-    return []
-  }
+  const archives = (archiveData.archives || []).slice(-3)
 
-  const latestArchive = archives.archives.at(-1)
-  const data = await fetchJSON(latestArchive)
+  const results = await Promise.all(
+    archives.map(async (url) => {
+      const data = await fetchJSON(url)
+      return data.games || []
+    })
+  )
 
-  return (data.games || []).slice(-10).reverse()
+  const allGames = results
+    .flat()
+    .sort((a, b) => a.end_time - b.end_time)
+
+  const playerName = name.toLowerCase()
+
+  const gamesWithChanges = allGames.map((game, index) => {
+    const isWhite =
+      game.white?.username?.toLowerCase() === playerName
+
+    const playerColor = isWhite ? 'white' : 'black'
+    const currentRating = game[playerColor]?.rating
+
+    const previousGame = allGames
+      .slice(0, index)
+      .reverse()
+      .find((previous) => {
+        const sameTimeClass =
+          previous.time_class === game.time_class
+
+        const previousColor =
+          previous.white?.username?.toLowerCase() === playerName
+            ? 'white'
+            : 'black'
+
+        return (
+          sameTimeClass &&
+          typeof previous[previousColor]?.rating === 'number'
+        )
+      })
+
+    let ratingChange = null
+
+    if (previousGame && typeof currentRating === 'number') {
+      const previousColor =
+        previousGame.white?.username?.toLowerCase() === playerName
+          ? 'white'
+          : 'black'
+
+      const previousRating = previousGame[previousColor]?.rating
+
+      if (typeof previousRating === 'number') {
+        ratingChange = currentRating - previousRating
+      }
+    }
+
+    return {
+      ...game,
+      ratingChange,
+    }
+  })
+
+  return gamesWithChanges
+    .sort((a, b) => b.end_time - a.end_time)
+    .slice(0, 10)
 }
 
 // Build a rating series from ratings recorded in archived games
-export async function getRatingHistory(username, timeClass = 'chess_rapid') {
-  const name = username.trim().toLowerCase()
+export async function getRatingHistory(
+  username,
+  timeClass = 'chess_rapid'
+) {
+  const name = username.trim()
 
   const archiveData = await fetchJSON(
     `${BASE_URL}/player/${encodeURIComponent(name)}/games/archives`
@@ -63,48 +125,65 @@ export async function getRatingHistory(username, timeClass = 'chess_rapid') {
 
   const archives = (archiveData.archives || []).slice(-12)
 
+  console.log('Archive months found:', archives.length)
+
   const results = await Promise.all(
     archives.map(async (url) => {
-      try {
-        const data = await fetchJSON(url)
-        return data.games || []
-      } catch (error) {
-        console.error('Could not load archive:', url, error)
-        return []
-      }
+      const data = await fetchJSON(url)
+      return data.games || []
     })
   )
 
   const history = []
-
+console.log('First archived game:', results.flat()[0])
+console.log(
+  'Available time controls:',
+  [...new Set(results.flat().map((game) => game.time_class))]
+)
+console.log(
+  'Archive game count:',
+  results.reduce((total, games) => total + games.length, 0)
+)
   for (const games of results) {
     for (const game of games) {
-      if (game.time_class !== timeClass) continue
+      const selectedClass = timeClass.replace('chess_', '')
 
-      let color
+      if (game.time_class !== selectedClass) continue
 
-      if (game.white?.username?.toLowerCase() === name) {
-        color = 'white'
-      } else if (game.black?.username?.toLowerCase() === name) {
-        color = 'black'
+      const whiteName = game.white?.username?.toLowerCase()
+      const blackName = game.black?.username?.toLowerCase()
+      const playerName = name.toLowerCase()
+
+      let playerColor
+
+      if (whiteName === playerName) {
+        playerColor = 'white'
+      } else if (blackName === playerName) {
+        playerColor = 'black'
       } else {
         continue
       }
 
-      const rating = game[color]?.rating
+      const rating = game[playerColor]?.rating
+
       if (typeof rating !== 'number') continue
 
       history.push({
         timestamp: game.end_time,
-        date: new Date(game.end_time * 1000).toISOString().slice(0, 10),
+        date: new Date(game.end_time * 1000).toLocaleDateString(),
         rating,
         opponent:
-          color === 'white'
+          playerColor === 'white'
             ? game.black?.username
             : game.white?.username,
       })
     }
   }
 
-  return history.sort((a, b) => a.timestamp - b.timestamp)
+  history.sort((a, b) => a.timestamp - b.timestamp)
+
+  console.log('Selected time control:', timeClass)
+  console.log('Games with ratings:', history.length)
+
+  return history
 }

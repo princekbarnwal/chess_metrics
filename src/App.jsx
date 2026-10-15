@@ -66,25 +66,36 @@ function App() {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState('')
 
-  async function loadHistory(playerName, selectedTimeClass) {
-    setHistoryLoading(true)
-    setHistoryError('')
 
-    try {
-      const history = await getRatingHistory(
-        playerName,
-        selectedTimeClass
-      )
-      setRatingHistory(history)
-    } catch (err) {
-      setRatingHistory([])
-      setHistoryError(
-        err.message || 'Could not load rating history.'
-      )
-    } finally {
-      setHistoryLoading(false)
-    }
+async function loadHistory(playerName, selectedTimeClass) {
+  setHistoryLoading(true)
+  setHistoryError('')
+
+  try {
+    console.log('Loading history for:', playerName)
+    console.log('Selected time control:', selectedTimeClass)
+
+    const history = await getRatingHistory(
+      playerName,
+      selectedTimeClass
+    )
+
+    console.log('History returned from API:', history)
+    console.log('Number of history entries:', history.length)
+
+    setRatingHistory(history)
+  } catch (err) {
+    console.error('Rating history error:', err)
+
+    setRatingHistory([])
+    setHistoryError(
+      err.message || 'Could not load rating history.'
+    )
+  } finally {
+    setHistoryLoading(false)
   }
+}
+
 
   async function handleSearch(event) {
     event.preventDefault()
@@ -146,7 +157,7 @@ function App() {
         <a className="brand" href="/">
           <span className="brand-icon">♞</span>
           <span>
-            Chess<span className="brand-accent">Scope</span>
+            Chess<span className="brand-accent">See</span>
           </span>
         </a>
 
@@ -188,7 +199,7 @@ function App() {
           </form>
 
           <p className="search-hint">
-            Try a public username, for example: hikaru , magnuscarlsen
+            Try a public username, for example: thevish , hikaru , magnuscarlsen 
           </p>
         </section>
 
@@ -214,7 +225,7 @@ function App() {
                   <img
                     className="avatar"
                     src={player.avatar}
-                    alt={`${player.username}'s avatar`}
+                    alt="Player avatar"
                   />
                 ) : (
                   <div className="avatar avatar-placeholder">
@@ -372,45 +383,54 @@ function App() {
                       resultLabel = 'Draw'
                     }
 
-                    return (
-                      <a
-                        className="game-row"
-                        href={game.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        key={game.uuid || game.url || index}
-                      >
-                        <div className="game-date">
-                          {formatDate(game.end_time)}
-                        </div>
+                  return (
+                    <a
+                      className="game-row"
+                      href={game.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      key={game.uuid || game.url || index}
+                    >
+                      <div className="game-date">
+                        {formatDate(game.end_time)}
+                      </div>
 
-                        <div className="game-players">
-                          <span>
-                            <i className="piece white-piece">♔</i>
-                            {game.white.username}
-                          </span>
+                      <div className="game-players">
+                        <span>
+                          <i className="piece white-piece">♔</i>
+                          {game.white?.username}
+                          {color === 'white' && ' (You)'}
+                        </span>
 
-                          <span>
-                            <i className="piece black-piece">♚</i>
-                            {game.black.username}
-                          </span>
-                        </div>
+                        <span>
+                          <i className="piece black-piece">♚</i>
+                          {game.black?.username}
+                          {color === 'black' && ' (You)'}
+                        </span>
+                      </div>
 
-                        <div className="game-meta">
-                          <span className="game-time">
-                            {game.time_class || 'Chess'}
-                          </span>
+                      <div className="game-meta">
+                        <span className="game-time">
+                          {game.time_class || 'Chess'}
+                        </span>
 
-                          <span
-                            className={`result result-${resultLabel.toLowerCase()}`}
-                          >
-                            {resultLabel}
-                          </span>
-                        </div>
+                        <span
+                          className={`result result-${resultLabel.toLowerCase()}`}
+                        >
+                          {resultLabel}
+                        </span>
 
-                        <span className="game-arrow">↗</span>
-                      </a>
-                    )
+                        <span className="game-rating-change">
+                          Rating change:{' '}
+                          {game.ratingChange === null
+                            ? '—'
+                            : `${game.ratingChange > 0 ? '+' : ''}${game.ratingChange}`}
+                        </span>
+                      </div>
+
+                      <span className="game-arrow">↗</span>
+                    </a>
+                  )
                   })}
                 </div>
               )}
@@ -447,7 +467,7 @@ function App() {
 
         <footer className="footer">
           <span>
-            ChessScope · An independent chess stats project
+            ChessSee · An independent chess stats project
           </span>
           <span>Data provided by the Chess.com public API</span>
         </footer>

@@ -13,8 +13,9 @@ import { useMemo } from 'react'
 export default function RatingChart({ history, timeClass, onTimeClassChange }) {
   const chartData = useMemo(
     () =>
-      history.map((item) => ({
+      history.map((item, index) => ({
         ...item,
+        index,
         label: new Date(item.timestamp * 1000).toLocaleDateString(
           undefined,
           { month: 'short', day: 'numeric' }
@@ -75,7 +76,8 @@ export default function RatingChart({ history, timeClass, onTimeClassChange }) {
             >
               <CartesianGrid stroke="#ffffff12" vertical={false} />
               <XAxis
-                dataKey="label"
+                dataKey="index"
+                tickFormatter={(index) => chartData[index]?.label ?? ''}
                 tick={{ fill: '#8c9788', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
