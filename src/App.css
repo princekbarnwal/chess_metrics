@@ -845,3 +845,39 @@
     font-size: 24px;
   }
 }
+
+.game-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.game-filter {
+  padding: 8px 16px;
+  border: 1px solid #343d31;
+  border-radius: 8px;
+  background: #1a2119;
+  color: #aab5a5;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.game-filter:hover {
+  border-color: #9be564;
+  color: #f1f4ed;
+}
+
+.game-filter.active {
+  background: #b4f36c;
+  border-color: #b4f36c;
+  color: #172014;
+  font-weight: 700;
+}
+
+.game-filter:focus-visible {
+  outline: 2px solid #b4f36c;
+  outline-offset: 3px;
+}

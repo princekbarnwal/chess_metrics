@@ -58,8 +58,20 @@ function App() {
   const [player, setPlayer] = useState(null)
   const [stats, setStats] = useState(null)
   const [games, setGames] = useState([])
+  const [gameFilter, setGameFilter] = useState('all')
 
-  const performance = games.reduce(
+  
+const filteredGames =
+  gameFilter === 'all'
+    ? games
+    : games.filter(
+        (game) =>
+          game.time_class?.toLowerCase() ===
+          gameFilter.replace('chess_', '').toLowerCase()
+      )
+
+
+const performance = filteredGames.reduce(
     (summary, game) => {
       const playerName = player?.username?.toLowerCase()
 
@@ -407,14 +419,46 @@ async function loadHistory(playerName, selectedTimeClass) {
                   Latest archive
                 </span>
               </div>
+              
+              <div className="game-filters">
+                {[
+                  { label: 'All', value: 'all' },
+                  { label: 'Bullet', value: 'chess_bullet' },
+                  { label: 'Blitz', value: 'chess_blitz' },
+                  { label: 'Rapid', value: 'chess_rapid' },
+                  { label: 'Daily', value: 'chess_daily' },
+                ].map((filter) => {
+                  const count =
+                    filter.value === 'all'
+                      ? games.length
+                      : games.filter(
+                          (game) =>
+                            game.time_class?.toLowerCase() ===
+                            filter.value.replace('chess_', '')
+                        ).length
 
-              {games.length === 0 ? (
+                  return (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      className={`game-filter ${
+                        gameFilter === filter.value ? 'active' : ''
+                      }`}
+                      onClick={() => setGameFilter(filter.value)}
+                    >
+                      {filter.label} ({count})
+                    </button>
+                  )
+                })}
+              </div>
+
+              {filteredGames.length === 0 ? (
                 <p className="empty-state">
                   No public games were found in the latest archive.
                 </p>
               ) : (
                 <div className="games-list">
-                  {games.map((game, index) => {
+                  {filteredGames.map((game, index) => {
                     const playerName =
                       player.username.toLowerCase()
 
