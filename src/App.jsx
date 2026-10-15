@@ -58,6 +58,47 @@ function App() {
   const [player, setPlayer] = useState(null)
   const [stats, setStats] = useState(null)
   const [games, setGames] = useState([])
+
+  const performance = games.reduce(
+    (summary, game) => {
+      const playerName = player?.username?.toLowerCase()
+
+      const isWhite =
+        game.white?.username?.toLowerCase() === playerName
+      const isBlack =
+        game.black?.username?.toLowerCase() === playerName
+
+      if (!isWhite && !isBlack) return summary
+
+      const result = (isWhite ? game.white : game.black)?.result
+
+      if (result === 'win') {
+        summary.wins += 1
+      } else if (result === 'checkmated' ||
+                result === 'timeout' ||
+                result === 'resigned' ||
+                result === 'lose' ||
+                result === 'abandoned') {
+        summary.losses += 1
+      } else if (
+        ['agreed', 'stalemate', 'repetition', 'insufficient',
+        '50move', 'timevsinsufficient'].includes(result)
+      ) {
+        summary.draws += 1
+      } else {
+        summary.other += 1
+      }
+
+      return summary
+    },
+    { wins: 0, losses: 0, draws: 0, other: 0 }
+  )
+  const decidedGames =
+    performance.wins + performance.losses + performance.draws
+
+  const winRate = decidedGames
+    ? Math.round((performance.wins / decidedGames) * 100)
+    : 0
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -324,6 +365,38 @@ async function loadHistory(playerName, selectedTimeClass) {
             </section>
 
             <section className="section games-section">
+              <div className="performance-summary">
+                <div className="performance-card">
+                  <span className="performance-label">Wins</span>
+                  <strong className="performance-value performance-wins">
+                    {performance.wins}
+                  </strong>
+                </div>
+
+                <div className="performance-card">
+                  <span className="performance-label">Losses</span>
+                  <strong className="performance-value performance-losses">
+                    {performance.losses}
+                  </strong>
+                </div>
+
+                <div className="performance-card">
+                  <span className="performance-label">Draws</span>
+                  <strong className="performance-value">
+                    {performance.draws}
+                  </strong>
+                </div>
+
+                <div className="performance-card">
+                  <span className="performance-label">Win rate</span>
+                  <strong className="performance-value">
+                    {winRate}%
+                  </strong>
+                  <span className="performance-note">
+                    {decidedGames} decided games
+                  </span>
+                </div>
+              </div>
               <div className="section-heading">
                 <div>
                   <p className="section-kicker">ON THE BOARD</p>
