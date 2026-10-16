@@ -1,4 +1,7 @@
-
+import PerformanceSummary from "./components/PerformanceSummary"
+import RatingCard from "./components/RatingCards"
+import PlayerProfile from "./components/PlayerProfile"
+import SearchBar from "./components/SearchBar"
 import { useState } from 'react'
 import RatingChart from './components/RatingChart'
 import {
@@ -26,32 +29,7 @@ const ratingTypes = [
   ['chess_daily', 'Daily'],
 ]
 
-function RatingCard({ label, data }) {
-  const rating = data?.last?.rating
-  const best = data?.best?.rating
-  const record = data?.record
 
-  return (
-    <article className="rating-card">
-      <span className="muted">{label}</span>
-
-      <strong className="rating-number">
-        {rating ?? '—'}
-      </strong>
-
-      <div className="rating-details">
-        <span>Peak: {best ?? '—'}</span>
-
-        {record && (
-          <span>
-            {record.win ?? 0}W / {record.draw ?? 0}D /{' '}
-            {record.loss ?? 0}L
-          </span>
-        )}
-      </div>
-    </article>
-  )
-}
 
 function App() {
   const [username, setUsername] = useState('')
@@ -235,26 +213,13 @@ async function loadHistory(playerName, selectedTimeClass) {
             and recent games in one place.
           </p>
 
-          <form className="search-form" onSubmit={handleSearch}>
-            <span className="search-icon">⌕</span>
-
-            <input
-              aria-label="Chess.com username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Enter a Chess.com username..."
-              autoComplete="off"
-            />
-
-            <button type="submit" disabled={loading}>
-              {loading ? 'Searching…' : 'Explore player ↗'}
-            </button>
-          </form>
-
-          <p className="search-hint">
-            Try a public username, for example: thevish , hikaru , magnuscarlsen 
-          </p>
-        </section>
+          <SearchBar
+            username={username}
+            setUsername={setUsername}
+            handleSearch={handleSearch}
+            loading={loading}
+          />
+          </section>
 
         {error && (
           <div className="error-message" role="alert">
@@ -272,61 +237,11 @@ async function loadHistory(playerName, selectedTimeClass) {
 
         {player && !loading && (
           <div className="results">
-            <section className="profile-panel">
-              <div className="profile-main">
-                {player.avatar ? (
-                  <img
-                    className="avatar"
-                    src={player.avatar}
-                    alt="Player avatar"
-                  />
-                ) : (
-                  <div className="avatar avatar-placeholder">
-                    ♞
-                  </div>
-                )}
-
-                <div className="profile-info">
-                  <div className="profile-label">
-                    PLAYER PROFILE
-                  </div>
-
-                  <h2>
-                    {player.title && (
-                      <span className="player-title">
-                        {player.title}{' '}
-                      </span>
-                    )}
-                    {player.username}
-                  </h2>
-
-                  <p>
-                    Chess.com member since{' '}
-                    {formatDate(player.joined)}
-                  </p>
-
-                  {player.country && (
-                    <a
-                      className="country-link"
-                      href={player.country}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View country details ↗
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              <a
-                className="external-link"
-                href={player.url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                View Chess.com profile ↗
-              </a>
-            </section>
+            
+          <PlayerProfile
+            player={player}
+            formatDate={formatDate}
+          />
 
             <section className="section">
               <div className="section-heading">
@@ -377,38 +292,11 @@ async function loadHistory(playerName, selectedTimeClass) {
             </section>
 
             <section className="section games-section">
-              <div className="performance-summary">
-                <div className="performance-card">
-                  <span className="performance-label">Wins</span>
-                  <strong className="performance-value performance-wins">
-                    {performance.wins}
-                  </strong>
-                </div>
-
-                <div className="performance-card">
-                  <span className="performance-label">Losses</span>
-                  <strong className="performance-value performance-losses">
-                    {performance.losses}
-                  </strong>
-                </div>
-
-                <div className="performance-card">
-                  <span className="performance-label">Draws</span>
-                  <strong className="performance-value">
-                    {performance.draws}
-                  </strong>
-                </div>
-
-                <div className="performance-card">
-                  <span className="performance-label">Win rate</span>
-                  <strong className="performance-value">
-                    {winRate}%
-                  </strong>
-                  <span className="performance-note">
-                    {decidedGames} decided games
-                  </span>
-                </div>
-              </div>
+              <PerformanceSummary
+                performance={performance}
+                winRate={winRate}
+                decidedGames={decidedGames}
+              />
               <div className="section-heading">
                 <div>
                   <p className="section-kicker">ON THE BOARD</p>
